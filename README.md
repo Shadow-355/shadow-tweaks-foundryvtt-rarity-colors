@@ -52,3 +52,5 @@ Thanks to anyone who helps me with this code! I appreciate the user community's 
 - Ty to [p4535992](https://github.com/p4535992/) and the module [FoundryVTT Rarity Colors](https://github.com/p4535992/foundryvtt-rarity-colors)
 - Ty to  [Kandashi](https://github.com/kandashi) and the module [Rarity Color](https://github.com/kandashi/rarity-colors)
 - Ty to  [russoedu](https://github.com/russoedu) and the module [font-color-contrast](https://github.com/russoedu/font-color-contrast)
+
+This package contains art, text, or software code produced using generative AI. An LLM was used as a code-generation tool and to generate most code.
