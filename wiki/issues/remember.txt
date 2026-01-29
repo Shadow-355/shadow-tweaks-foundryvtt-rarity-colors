@@ -1,9 +1,0 @@
-<@640486821377212437> sorry to pounce on you as soon as i saw you active in discord, but im getting this error with Rarity Colors when trying to open Rarity Color Configuration  
-(Foundry v11 313, dnd5e 2.3.1, no modules enabled except lib - Color Settings and Rarity Colors, and this is a fresh install of both modules). happened after i attempted to add a new rarity ```js
-  }); 
-    foundry.utils.mergeObject(CONFIG.DND5E.itemRarity, {
-      legacy: "Legacy"
-  });       ``` , 
-  
-  
-  the new rarity added successfully, so i made a rarity in item rarity with corresponding identifier (not sure if this is supported). it started throwing a different error which i now cannot replicate without being able to open the settings due to this error. anyway, i commented out my new rarity and its all back to default, but this is still happening. any idea whats going on/how to fix?

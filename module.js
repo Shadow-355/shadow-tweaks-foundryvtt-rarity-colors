@@ -3,10 +3,13 @@ import { initHooks, readyHooks, setupHooks } from "./scripts/raritycolors.js";
 import CONSTANTS from "./scripts/constants.js";
 import Logger from "./scripts/lib/Logger.js";
 
+console.log("🎨 Rarity Colors Module: Loading...");
+
 /* ------------------------------------ */
 /* Initialize module */
 /* ------------------------------------ */
 Hooks.once("init", () => {
+  console.log("🎨 Rarity Colors Module: init hook firing");
   // Do anything once the module is ready
   // if (!game.modules.get("lib-wrapper")?.active && game.user?.isGM) {
   //     let word = "install and activate";
@@ -36,9 +39,15 @@ Hooks.once("init", () => {
 /* Setup module */
 /* ------------------------------------ */
 Hooks.once("setup", () => {
+  console.log("🎨 Rarity Colors Module: setup hook firing");
+  try {
+    setupHooks();
+    console.log("🎨 Rarity Colors Module: setupHooks() completed successfully");
+  } catch (e) {
+    console.error("🎨 Rarity Colors Module: Error in setupHooks():", e);
+  }
   // Do anything after initialization but before ready
   // setupModules();
-  setupHooks();
   // registerSettings();
 });
 /* ------------------------------------ */

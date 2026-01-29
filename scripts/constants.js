@@ -1,6 +1,6 @@
 const CONSTANTS = {
-  MODULE_ID: "rarity-colors",
-  PATH: `modules/rarity-colors/`,
+  MODULE_ID: "shadow-tweaks-rarity-colors",
+  PATH: `modules/shadow-tweaks-rarity-colors/`,
   SETTINGS: {
     MODE: {
       NONE: "None",

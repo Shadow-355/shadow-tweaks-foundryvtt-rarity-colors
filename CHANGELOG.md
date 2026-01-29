@@ -1,3 +1,23 @@
+### 13.0.0 - Overhaul: Updated to FoundryV13
+
+- Summary: Adds initialization and robust UI hooks to apply rarity-based colors across actor sheets, item sheets, containers, sidebars, and compendia.
+
+- Key additions:
+  - Initialization: `initHooks`, `setupHooks`, `readyHooks` and module `API` wiring.
+  - Rendering hooks: support for Tidy5e character/item sheets, standard actor/item sheets, container rendering, sidebar and compendium listings.
+  - Color application modes: background, text, and border (switchable via settings); integration with `colorsettings` for readable text color.
+  - Configuration handling: `prepareConfigurations`, `prepareMapConfigurations`, per-type preparation helpers, and sensible defaults for rarities/spell schools/feature types.
+  - Safety & compatibility: clears previous inline styles before reapplying; resilient DOM selectors and jQuery/native handling; UUID resolution fallbacks; skips unidentified items.
+
+- Utilities & helpers:
+  - `renderActorRarityColors`, `renderItemSheetRarityColors`, `applyChangesCompendiumRarityColor`.
+  - Default maps: `_retrieveMapItemRarityDefaults`, `_retrieveMapSpellSchoolsRarityDefaults`, `_retrieveMapClassFeatureTypesRarityDefaults`.
+  - `colorIsDefault` helper and multiple `is*Enable` helpers for mode checks.
+
+- Notes / TODO:
+  - Multi-system (non-dnd5e) support is noted but not implemented.
+  - `updateItem` hook is present but commented out. 
+
 ### 12.0.2
 
 - quick fix: adding Tidy v7.5.0 compatibility https://github.com/p4535992/foundryvtt-rarity-colors/pull/27 ty to @kgar

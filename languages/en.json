@@ -1,0 +1,126 @@
+{
+  "shadow-tweaks-rarity-colors.setting.rarityFlag.name": "Rarity Color",
+  "shadow-tweaks-rarity-colors.setting.rarityFlag.hint": "Color Items in the actor sheet and sidebar based on its rarity",
+
+  "shadow-tweaks-rarity-colors.setting.spellFlag.name": "Spell Color",
+  "shadow-tweaks-rarity-colors.setting.spellFlag.hint": "Color Items in the sidebar that are Spells",
+
+  "shadow-tweaks-rarity-colors.setting.featFlag.name": "Feat Color",
+  "shadow-tweaks-rarity-colors.setting.featFlag.hint": "Color Items in the sidebar that are Features",
+
+  "shadow-tweaks-rarity-colors.setting.common.name": "Common Color",
+  "shadow-tweaks-rarity-colors.setting.common.hint": " ",
+
+  "shadow-tweaks-rarity-colors.setting.commonExternal.name": "Common External Color",
+  "shadow-tweaks-rarity-colors.setting.common.hint": " ",
+
+  "shadow-tweaks-rarity-colors.setting.uncommon.name": "Uncommon Color",
+  "shadow-tweaks-rarity-colors.setting.uncommon.hint": " ",
+
+  "shadow-tweaks-rarity-colors.setting.uncommonExternal.name": "Uncommon External Color",
+  "shadow-tweaks-rarity-colors.setting.uncommon.hint": " ",
+
+  "shadow-tweaks-rarity-colors.setting.rare.name": "Rare Color",
+  "shadow-tweaks-rarity-colors.setting.rare.hint": " ",
+
+  "shadow-tweaks-rarity-colors.setting.rareExternal.name": "Rare External Color",
+  "shadow-tweaks-rarity-colors.setting.rareExternal.hint": " ",
+
+  "shadow-tweaks-rarity-colors.setting.veryrare.name": "Very Rare Color",
+  "shadow-tweaks-rarity-colors.setting.veryrare.hint": " ",
+
+  "shadow-tweaks-rarity-colors.setting.veryrareExternal.name": "Very Rare External Color",
+  "shadow-tweaks-rarity-colors.setting.veryrareExternal.hint": " ",
+
+  "shadow-tweaks-rarity-colors.setting.legendary.name": "Legendary Color",
+  "shadow-tweaks-rarity-colors.setting.legendary.hint": " ",
+
+  "shadow-tweaks-rarity-colors.setting.legendaryExternal.name": "Legendary External Color",
+  "shadow-tweaks-rarity-colors.setting.legendaryExternal.hint": " ",
+
+  "shadow-tweaks-rarity-colors.setting.artifact.name": "Artifact Color",
+  "shadow-tweaks-rarity-colors.setting.artifact.hint": " ",
+
+  "shadow-tweaks-rarity-colors.setting.artifactExternal.name": "Artifact External Color",
+  "shadow-tweaks-rarity-colors.setting.artifactExternal.hint": " ",
+
+  "shadow-tweaks-rarity-colors.setting.spell.name": "Spell Color",
+  "shadow-tweaks-rarity-colors.setting.spell.hint": " ",
+
+  "shadow-tweaks-rarity-colors.setting.spellExternal.name": "Spell External Color",
+  "shadow-tweaks-rarity-colors.setting.spellExternal.hint": " ",
+
+  "shadow-tweaks-rarity-colors.setting.feat.name": "Feat Color",
+  "shadow-tweaks-rarity-colors.setting.feat.hint": " ",
+
+  "shadow-tweaks-rarity-colors.setting.featExternal.name": "Feat External Color",
+  "shadow-tweaks-rarity-colors.setting.featExternal.hint": " ",
+
+  "shadow-tweaks-rarity-colors.setting.rarityColorMode.name": "Rarity Color Mode",
+  "shadow-tweaks-rarity-colors.setting.rarityColorMode.hint": "Choose what mode you want for this module",
+
+  "shadow-tweaks-rarity-colors.setting.disableRarityColorOnCompendium.name": "Disable Rarity Color on the compendium",
+  "shadow-tweaks-rarity-colors.setting.disableRarityColorOnCompendium.hint": "Apply this styling to the compendium can slowdown the loading of the compendium. You can now disable this if you want it.",
+
+  "shadow-tweaks-rarity-colors.setting.reset.name": "Reset settings to default",
+  "shadow-tweaks-rarity-colors.setting.reset.label": "Reset Settings To Default",
+  "shadow-tweaks-rarity-colors.setting.reset.hint": "This will reset all of the settings of back to the active game system's default.",
+  "shadow-tweaks-rarity-colors.setting.debug.name": "Enable debugging",
+  "shadow-tweaks-rarity-colors.setting.debug.label": "Prints debug messages to the console",
+  "shadow-tweaks-rarity-colors.setting.debug.hint": " ",
+  "shadow-tweaks-rarity-colors.dialogs.resetsettings.title": "Reset Module Settings",
+  "shadow-tweaks-rarity-colors.dialogs.resetsettings.content": "Are you sure you want to reset all of the module settings to the current system's defaults? <strong>THIS CANNOT BE UNDONE!</strong>",
+  "shadow-tweaks-rarity-colors.dialogs.resetsettings.confirm": "Reset Module Settings",
+  "shadow-tweaks-rarity-colors.dialogs.resetsettings.cancel": "Cancel",
+  "shadow-tweaks-rarity-colors.dialogs.nosystemfound.title": "System Not Recognized",
+  "shadow-tweaks-rarity-colors.dialogs.nosystemfound.content": "This system is not currently fully supported. This means that the module does not know how to best handle this system's items, but can still operate in a limited fashion.<br><br>You can configure the module's settings yourself, but it requires a bit of technical know-how.",
+  "shadow-tweaks-rarity-colors.dialogs.systemfound.title": "System Recognized",
+  "shadow-tweaks-rarity-colors.dialogs.systemfound.content": "This system was previously not supported, but in an recent update it was added as a supported system!<br><br>Do you want to load this system's default Item Pile settings?",
+  "shadow-tweaks-rarity-colors.dialogs.systemfound.confirm": "Apply System Defaults",
+  "shadow-tweaks-rarity-colors.dialogs.menu.name": "Rarity Color Configuration",
+  "shadow-tweaks-rarity-colors.dialogs.menu.label": "Rarity Color Configuration",
+  "shadow-tweaks-rarity-colors.dialogs.menu.hint": "Set colors for item, spells and features",
+
+  "shadow-tweaks-rarity-colors.setting.enableBackgroundColorInsteadText.name": "Enable Color only as background and not text",
+  "shadow-tweaks-rarity-colors.setting.enableBackgroundColorInsteadText.hint": "Color the Backgrounds Items in the sidebar and the inventory instead the text",
+
+  "shadow-tweaks-rarity-colors.setting.enableBorderColor.name": "Enable Color on the image border",
+  "shadow-tweaks-rarity-colors.setting.enableBorderColor.hint": "Enable Color on the image border on Items in the sidebar and the inventory",
+
+  "shadow-tweaks-rarity-colors.setting.thresholdBackgroundColorInsteadText.name": "Contrast threshold to control the resulting font color",
+  "shadow-tweaks-rarity-colors.setting.thresholdBackgroundColorInsteadText.hint": "Make sense only with 'Enable Color only as background and not text' enabled. Contrast threshold to control the resulting font color, float values from 0 to 1. Default is 0.5. It is use by default for all text without a rgba color background",
+  "shadow-tweaks-rarity-colors.setting.forceThresholdBackgroundColorInsteadText.name": "Force to use the manual Contrast threshold to control the resulting font color",
+  "shadow-tweaks-rarity-colors.setting.forceThresholdBackgroundColorInsteadText.hint": "Make sense only with 'Enable Color only as background and not text' enabled. If enabled it will apply the Contrast threshold set on 'Contrast threshold to control the resulting font color' to all text even the one with a rgba background.",
+
+  "shadow-tweaks-rarity-colors.setting.forceAlphaBackgroundColorInsteadText.name": "Force the alpha/opacity value on the rgba background color.",
+  "shadow-tweaks-rarity-colors.setting.forceAlphaBackgroundColorInsteadText.hint": "Make sense only with 'Enable Color only as background and not text' enabled. If enabled it will apply the alpha value on thi setting if is > 0 by default in all the backgrounds even the one with a rgba background. NOTE: The value '0' will disable this setting.",
+
+  "shadow-tweaks-rarity-colors.RarityColorsApp": {
+    "title": "Rarity Color Configuration",
+    "save": "Save Changes",
+    "delete": "Delete",
+    "tabs": {
+      "itemRarity": {
+        "name": "Item Rarity Colors",
+        "hint": "Customize the Item Rarity Colors",
+        "itemRarityName": "Item Rarity Name",
+        "itemRarityColor": "Color",
+        "add": "Add Item Rarity Color"
+      },
+      "spellSchools": {
+        "name": "Spell Schools Colors",
+        "hint": "Customize the Spell Schools Colors",
+        "spellSchoolName": "Spell School Name",
+        "spellSchoolColor": "Color",
+        "add": "Add Spell School Color"
+      },
+      "classFeatureTypes": {
+        "name": "Class Feature Types Colors",
+        "hint": "Customize the Class Feature Types Colors",
+        "classFeatureTypeName": "Class Feature Type Name",
+        "classFeatureTypeColor": "Color",
+        "add": "Add Class Feature Type Color"
+      }
+    }
+  }
+}

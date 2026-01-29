@@ -12,7 +12,21 @@ let rarityFlag = false;
 
 export const initHooks = async () => {
   // TODO Make something for multisystem here
-  ORIGINAL_CONFIG = foundry.utils.deepClone(game.dnd5e?.config || {});
+  // Deep clone only the specific properties we need to avoid deprecated ones being accessed
+  if (game.dnd5e?.config) {
+    ORIGINAL_CONFIG = {};
+    if (game.dnd5e.config.itemRarity) {
+      ORIGINAL_CONFIG.itemRarity = foundry.utils.deepClone(game.dnd5e.config.itemRarity);
+    }
+    if (game.dnd5e.config.spellSchools) {
+      ORIGINAL_CONFIG.spellSchools = foundry.utils.deepClone(game.dnd5e.config.spellSchools);
+    }
+    if (game.dnd5e.config.featureTypes) {
+      ORIGINAL_CONFIG.featureTypes = foundry.utils.deepClone(game.dnd5e.config.featureTypes);
+    }
+  } else {
+    ORIGINAL_CONFIG = {};
+  }
 };
 
 export const setupHooks = async () => {
@@ -21,6 +35,7 @@ export const setupHooks = async () => {
   rarityColorBackgroundEnable = isBackgroundEnable();
   rarityColorTextEnable = isTextEnable();
   rarityFlag = isDisabled();
+  Logger.debug(`Setup Hooks - rarityFlag: ${rarityFlag}, border: ${rarityColorBorderEnable}, bg: ${rarityColorBackgroundEnable}, text: ${rarityColorTextEnable}`);
 };
 
 export const readyHooks = () => {
@@ -28,37 +43,54 @@ export const readyHooks = () => {
   if (isEmptyObject(API.mapConfigurations)) {
     API.mapConfigurations = API.getColorMap();
   }
+  Logger.debug("Rarity Colors Module READY");
 };
 
-// Tidy 5e Sheet compatibility
-Hooks.on("tidy5e-sheet.renderActorSheet", (app, element) => {
-  if (!rarityFlag) {
+// Tidy 5e Sheet compatibility - V13 uses renderTidy5eCharacterSheet hook
+Hooks.on("renderTidy5eCharacterSheet", (app, element) => {
+  if (rarityFlag) {
+    Logger.debug(`renderTidy5eCharacterSheet: colors disabled, returning early`);
     return;
   }
 
+  Logger.debug(`renderTidy5eCharacterSheet: Processing sheet ${app.object?.name}`);
+  
+  // Find all item rows by data-item-id attribute - works across Tidy5e versions
+  const itemRows = element.querySelectorAll("[data-item-id]");
+  Logger.debug(`Found ${itemRows.length} item rows with data-item-id`);
+  
+  // Undo any existing color overrides on all item rows
+  itemRows.forEach(row => {
+    row.style.backgroundColor = "";
+    row.style.background = "";
+    row.style.color = "";
+    
+    // Also reset nested elements
+    const nameEls = row.querySelectorAll(".item-name, [data-tidy-field='name']");
+    nameEls.forEach(el => {
+      el.style.color = "";
+      el.style.backgroundColor = "";
+      el.style.background = "";
+    });
+    
+    const imgEls = row.querySelectorAll(".item-image img, [data-tidy-sheet-part='item-image'] img");
+    imgEls.forEach(el => {
+      el.style.border = "";
+    });
+  });
+  
+  // Now apply colors
   const options = {
-    itemSelector: `[data-tidy-sheet-part='item-table-row'] .item-table-row, [data-tidy-sheet-part='item-table-row'].item-table-row`,
-    itemNameSelector: `[data-tidy-sheet-part='item-name']`,
-    itemImageNameSelector: `.item-image`,
+    itemSelector: `[data-item-id]`,
+    itemNameSelector: `.item-name, [data-tidy-field="name"]`,
+    itemImageNameSelector: `.item-image img, [data-tidy-sheet-part="item-image"] img`,
   };
-  // Undo any existing color overrides
-  const html = $(element);
-  if (options.itemSelector) {
-    html.find(options.itemSelector).css("background-color", "");
-    html.find(options.itemSelector).css("background", "");
-    html.find(options.itemSelector).css("color", "");
-  }
-  if (html.find(options.itemNameSelector)?.length > 0) {
-    html.find(options.itemNameSelector).css("color", "");
-  }
-  if (html.find(options.itemImageNameSelector)?.length > 0) {
-    html.find(options.itemImageNameSelector).css("border", "");
-  }
-  renderActorRarityColors(app, $(element), options);
-});
+  
+  renderActorRarityColors(app, element, options);
+})
 
 Hooks.on("renderActorSheet", (actorSheet, html) => {
-  if (!rarityFlag) {
+  if (rarityFlag) {
     return;
   }
   renderActorRarityColors(actorSheet, html, {
@@ -70,7 +102,7 @@ Hooks.on("renderActorSheet", (actorSheet, html) => {
 });
 
 Hooks.on("renderSidebarTab", (tab) => {
-  if (!rarityFlag) {
+  if (rarityFlag) {
     return;
   }
   if (tab instanceof CompendiumDirectory) {
@@ -81,72 +113,120 @@ Hooks.on("renderSidebarTab", (tab) => {
   }
 });
 
-Hooks.on("renderSidebarTab", (bar, html) => {
-  if (!rarityFlag) {
+Hooks.on("activateAbstractSidebarTab", (tab) => {
+  if (rarityFlag) {
     return;
   }
-  if (bar.id !== "items") {
+  
+  // Check if this is the items directory
+  if (!tab?.constructor?.name?.includes("ItemDirectory")) {
     return;
   }
+  
+  Logger.debug(`activateAbstractSidebarTab: Processing items sidebar`);
   if (isEmptyObject(API.mapConfigurations)) {
     API.mapConfigurations = API.getColorMap();
   }
 
-  let items = html.find(".directory-item.document.item");
+  // Try multiple selector approaches to find the items directory
+  let htmlElement = null;
+  
+  // Approach 1: Check if tab has a method to get its element
+  if (typeof tab?.element === 'function') {
+    htmlElement = tab.element();
+  } else if (tab?.element) {
+    htmlElement = tab.element;
+  }
+  
+  // Approach 2: Try DOM selectors
+  if (!htmlElement) {
+    htmlElement = document.querySelector(".sidebar-tab.items");
+  }
+  if (!htmlElement) {
+    htmlElement = document.querySelector("div[data-tab='items']");
+  }
+  if (!htmlElement) {
+    htmlElement = document.querySelector("#items");
+  }
+  
+  // Approach 3: Look for all directory items in the sidebar
+  if (!htmlElement) {
+    htmlElement = document.querySelector(".sidebar-tab");
+  }
+  
+  if (!htmlElement) {
+    Logger.warn(`Could not find items sidebar element`);
+    return;
+  }
+  
+  let items = htmlElement.querySelectorAll(".directory-item.document.item");
+  Logger.debug(`Found ${items.length} items in sidebar`);
+  
   for (let itemElement of items) {
-    // let id = itemElement.outerHTML.match(/data-document-id="(.*?)"/);
     let item = null;
-    if (!itemElement.dataset.uuid) {
-      let id = itemElement.dataset.documentId;
-      if (!id) {
-        continue;
-      }
-      item = game.items.get(id);
-    } else {
-      item = fromUuidSync(itemElement.dataset.uuid);
+    
+    // In V13, sidebar items use data-entry-id
+    let entryId = itemElement.dataset.entryId;
+    if (!entryId) {
+      continue;
     }
-
+    
+    // Try multiple approaches to find the item
+    // First try as direct document ID
+    item = game.items.get(entryId);
+    
+    // If not found, try as UUID
+    if (!item) {
+      try {
+        item = fromUuidSync(entryId);
+      } catch (e) {
+        // UUID resolution failed
+      }
+    }
+    
     if (!item) {
       continue;
     }
+    
     // TODO make multisystem only dnd5e supported
     if (isItemUnidentified(item)) {
-      Logger.debug(`Item is not identified no color is applied`, item);
       continue;
     }
 
     let itemNameElement = null;
     if (rarityColorBackgroundEnable) {
-      itemNameElement = $(itemElement).find(".document-name");
-      const thumbnail = $(itemElement).find(".thumbnail");
-      thumbnail.css("z-index", 1); // stupid display flex
+      itemNameElement = itemElement.querySelector(".document-name");
+      const thumbnail = itemElement.querySelector(".thumbnail");
+      if (thumbnail) {
+        thumbnail.style.zIndex = "1"; // stupid display flex
+      }
     } else if (rarityColorTextEnable) {
-      itemNameElement = $(itemElement).find(".document-name");
+      itemNameElement = itemElement.querySelector(".document-name");
     }
     let itemImageNameElement = null;
-    if ($(itemElement).find("img.thumbnail")?.length > 0) {
-      itemImageNameElement = $(itemElement).find("img.thumbnail");
+    if (itemElement.querySelector("img.thumbnail")) {
+      itemImageNameElement = itemElement.querySelector("img.thumbnail");
     }
 
     const color = API.getColorFromItem(item);
     if (!colorIsDefault(color)) {
-      if (itemNameElement?.length > 0) {
+      if (itemNameElement) {
         if (rarityColorBackgroundEnable) {
           const backgroundColor = API.getRarityTextBackgroundColor(color);
-          itemNameElement.css("background-color", backgroundColor);
+          itemNameElement.style.backgroundColor = backgroundColor;
           if (game.modules.get("colorsettings")?.api) {
             const textColor = API.getRarityTextColor(color);
-            itemNameElement.css("color", textColor);
+            itemNameElement.style.color = textColor;
           }
         } else if (rarityColorTextEnable) {
-          itemNameElement.css("color", color);
+          itemNameElement.style.color = color;
         }
       }
       if (rarityColorBorderEnable) {
-        if (itemImageNameElement?.length > 0) {
-          // itemImageNameElement.css("border-color", color+"!important");
-          itemImageNameElement.css("border", "solid " + color);
-          // itemImageNameElement.css("border-width", "thick");
+        if (itemImageNameElement) {
+          // itemImageNameElement.style.borderColor = color+"!important";
+          itemImageNameElement.style.border = "solid " + color;
+          // itemImageNameElement.style.borderWidth = "thick";
         }
       }
     }
@@ -163,8 +243,8 @@ Hooks.on("renderSidebarTab", (bar, html) => {
 //     ui.sidebar.render();
 // });
 
-Hooks.on("tidy5e-sheet.renderItemSheet", (app, element, data) => {
-  if (!rarityFlag) {
+Hooks.on("renderTidy5eItemSheet", (app, element, data) => {
+  if (rarityFlag) {
     return;
   }
   const options = {
@@ -174,39 +254,41 @@ Hooks.on("tidy5e-sheet.renderItemSheet", (app, element, data) => {
   };
 
   // Undo any existing color overrides
-  const html = $(element);
-  if (html.find(options.itemNameSelector)?.length > 0) {
-    html.find(options.itemNameSelector).css("background-color", "");
-    html.find(options.itemNameSelector).css("color", "");
+  if (element.querySelector(options.itemNameSelector)) {
+    element.querySelector(options.itemNameSelector).style.backgroundColor = "";
+    element.querySelector(options.itemNameSelector).style.color = "";
   }
-  if (html.find(options.itemNameSelector2)?.length > 0) {
-    html.find(options.itemNameSelector2).css("background-color", "");
-    html.find(options.itemNameSelector2).css("color", "");
+  if (element.querySelector(options.itemNameSelector2)) {
+    element.querySelector(options.itemNameSelector2).style.backgroundColor = "";
+    element.querySelector(options.itemNameSelector2).style.color = "";
   }
-  if (html.find(options.itemImageNameSelector)?.length > 0) {
-    html.find(options.itemImageNameSelector).css("border", "");
+  if (element.querySelector(options.itemImageNameSelector)) {
+    element.querySelector(options.itemImageNameSelector).style.border = "";
   }
-  html.find(`${options.raritySelectSelector} option`).css("background-color", "");
-  html.find(`${options.raritySelectSelector} option`).css("color", "");
+  element.querySelectorAll(`${options.raritySelectSelector} option`).forEach(opt => {
+    opt.style.backgroundColor = "";
+    opt.style.color = "";
+  });
 
-  renderItemSheetRarityColors(app, html, data, options);
+  renderItemSheetRarityColors(app, element, data, options);
 });
 
 Hooks.on("renderItemSheet", (app, html, appData) => {
-  if (!rarityFlag) {
+  if (rarityFlag) {
     return;
   }
+  const htmlElement = html instanceof jQuery ? html[0] : html;
   const options = {
     itemNameSelector: 'input[name="name"]',
     itemImageNameSelector: "img.profile",
     raritySelectSelector: 'select[name="system.rarity"]',
   };
-  renderItemSheetRarityColors(app, html, appData, options);
+  renderItemSheetRarityColors(app, htmlElement, appData, options);
 });
 
 Hooks.on("renderContainerSheet", () => {
-  $("li.item.flexrow").each((i, el) => {
-    const itemId = $(el).attr("data-item-id");
+  document.querySelectorAll("li.item.flexrow").forEach((el) => {
+    const itemId = el.getAttribute("data-item-id");
     if (!itemId) {
       return;
     }
@@ -237,7 +319,7 @@ async function applyChangesCompendiumRarityColor(tab) {
   if (game.settings.get(CONSTANTS.MODULE_ID, "disableRarityColorOnCompendium")) {
     return;
   }
-  const headerBanners = document.querySelectorAll(`.directory.compendium`).forEach(async (h) => {
+  document.querySelectorAll(`.directory.compendium`).forEach(async (h) => {
     const dataPack = h.dataset.pack;
     const items = document.querySelectorAll(`.directory.compendium[data-pack='${dataPack}'] .directory-item`);
     for (let itemElement of items) {
@@ -265,34 +347,34 @@ async function applyChangesCompendiumRarityColor(tab) {
       let itemNameElement = null;
       let itemImageNameElement = null;
       if (rarityColorBackgroundEnable) {
-        itemNameElement = $(itemElement).find(".document-name");
-        itemImageNameElement = $(itemElement).find("img.thumbnail");
-        // const thumbnail = $(itemElement).find(".thumbnail");
-        // thumbnail.css("z-index", 1); // stupid display flex
+        itemNameElement = itemElement.querySelector(".document-name");
+        itemImageNameElement = itemElement.querySelector("img.thumbnail");
+        // const thumbnail = itemElement.querySelector(".thumbnail");
+        // thumbnail.style.zIndex = "1"; // stupid display flex
       } else if (rarityColorTextEnable) {
-        itemNameElement = $(itemElement).find(".document-name");
-        itemImageNameElement = $(itemElement).find("img.thumbnail");
+        itemNameElement = itemElement.querySelector(".document-name");
+        itemImageNameElement = itemElement.querySelector("img.thumbnail");
       }
 
       const color = API.getColorFromItem(item);
       if (!colorIsDefault(color)) {
-        if (itemNameElement?.length > 0) {
+        if (itemNameElement) {
           if (rarityColorBackgroundEnable) {
             const backgroundColor = API.getRarityTextBackgroundColor(color);
-            itemNameElement.css("background-color", backgroundColor);
+            itemNameElement.style.backgroundColor = backgroundColor;
             if (game.modules.get("colorsettings")?.api) {
               const textColor = API.getRarityTextColor(color);
-              itemNameElement.css("color", textColor);
+              itemNameElement.style.color = textColor;
             }
           } else if (rarityColorTextEnable) {
-            itemNameElement.css("color", color);
+            itemNameElement.style.color = color;
           }
         }
         if (rarityColorBorderEnable) {
-          if (itemImageNameElement?.length > 0) {
-            // itemImageNameElement.css("border-color", color+"!important");
-            itemImageNameElement.css("border", "solid " + color);
-            // itemImageNameElement.css("border-width", "thick");
+          if (itemImageNameElement) {
+            // itemImageNameElement.style.borderColor = color+"!important";
+            itemImageNameElement.style.border = "solid " + color;
+            // itemImageNameElement.style.borderWidth = "thick";
           }
         }
       }
@@ -302,77 +384,76 @@ async function applyChangesCompendiumRarityColor(tab) {
 
 function renderActorRarityColors(actorSheet, html, options) {
   if (isEmptyObject(API.mapConfigurations)) {
+    Logger.debug(`renderActorRarityColors: Loading color map`);
     API.mapConfigurations = API.getColorMap();
   }
 
-  let items = [];
-  if (html.find($(options.itemSelector))?.length > 0) {
-    items = html.find($(options.itemSelector));
-  }
-  if (html.find($(options.itemSelector2))?.length > 0) {
-    items = html.find($(options.itemSelector2));
-  }
-  // let items = html.find($(options.itemSelector));
+  // Handle both jQuery elements and native DOM elements
+  const htmlElement = html instanceof jQuery ? html[0] : html;
+  
+  // Find all items by data-item-id attribute
+  let items = htmlElement.querySelectorAll(options.itemSelector);
+  Logger.debug(`renderActorRarityColors: Found ${items.length} items, rarityColorBackgroundEnable=${rarityColorBackgroundEnable}, rarityColorTextEnable=${rarityColorTextEnable}, rarityColorBorderEnable=${rarityColorBorderEnable}`);
+  
   for (let itemElement of items) {
-    // let id = itemElement.outerHTML.match(/data-item-id="(.*?)"/);
-    // Get closest available Item dataset.
-    let id = itemElement.closest("[data-item-id]")?.dataset.itemId;
+    // Get the item ID from the element
+    let id = itemElement.getAttribute("data-item-id") || 
+             itemElement.dataset?.itemId;
+             
     if (!id) {
       continue;
     }
+    
     let actor = actorSheet.object;
-    // let item = actor.items.get(id[1]);
     let item = actor.items.get(id);
     if (!item) {
+      Logger.debug(`Item ${id} not found in actor`);
       continue;
     }
+    
     // TODO make multisystem only dnd5e supported
     if (isItemUnidentified(item)) {
       Logger.debug(`Item is not identified no color is applied`, item);
       continue;
     }
 
-    let itemNameElement = null;
-    if (rarityColorBackgroundEnable) {
-      itemNameElement = $(itemElement);
-    } else if (rarityColorTextEnable) {
-      if ($(itemElement).find(options.itemNameSelector)?.length > 0) {
-        itemNameElement = $(itemElement).find(options.itemNameSelector);
-      }
-      if ($(itemElement).find(options.itemNameSelector2)?.length > 0) {
-        itemNameElement = $(itemElement).find(options.itemNameSelector2);
-      }
-    }
-    // if (!itemNameElement) {
-    //     continue;
-    // }
-    let itemImageNameElement = null;
-    if ($(itemElement).find(options.itemImageNameSelector)?.length > 0) {
-      itemImageNameElement = $(itemElement).find(options.itemImageNameSelector);
+    // Get color for this item
+    const color = API.getColorFromItem(item);
+    Logger.debug(`Item "${item.name}" - color: ${color}`);
+    
+    if (colorIsDefault(color)) {
+      Logger.debug(`Item "${item.name}" - color is default, skipping`);
+      continue;
     }
 
-    const color = API.getColorFromItem(item);
-    if (!colorIsDefault(color)) {
-      if (itemNameElement?.length > 0) {
-        if (rarityColorBackgroundEnable) {
-          const backgroundColor = API.getRarityTextBackgroundColor(color);
-          // Target background-color and background to ensure there are no overlapping backgrounds.
-          itemNameElement.css("background-color", backgroundColor);
-          itemNameElement.css("background", backgroundColor);
-          if (game.modules.get("colorsettings")?.api) {
-            const textColor = API.getRarityTextColor(color);
-            itemNameElement.css("color", textColor);
-          }
-        } else if (rarityColorTextEnable) {
-          itemNameElement.css("color", color);
-        }
+    // Apply background color to entire row
+    if (rarityColorBackgroundEnable) {
+      const backgroundColor = API.getRarityTextBackgroundColor(color);
+      itemElement.style.backgroundColor = backgroundColor;
+      itemElement.style.background = backgroundColor;
+      Logger.debug(`Applied background color ${backgroundColor} to ${item.name}`);
+      
+      if (game.modules.get("colorsettings")?.api) {
+        const textColor = API.getRarityTextColor(color);
+        itemElement.style.color = textColor;
       }
-      if (rarityColorBorderEnable) {
-        if (itemImageNameElement?.length > 0) {
-          //itemImageNameElement.css("border-color", color+"!important");
-          itemImageNameElement.css("border", "solid " + color);
-          // itemImageNameElement.css("border-width", "thick");
-        }
+    }
+    
+    // Apply text color to item name
+    if (rarityColorTextEnable) {
+      const nameEl = itemElement.querySelector(options.itemNameSelector);
+      if (nameEl) {
+        nameEl.style.color = color;
+        Logger.debug(`Applied text color ${color} to ${item.name}`);
+      }
+    }
+    
+    // Apply border to item image
+    if (rarityColorBorderEnable) {
+      const imageEl = itemElement.querySelector(options.itemImageNameSelector);
+      if (imageEl) {
+        imageEl.style.border = "solid " + color;
+        Logger.debug(`Applied border color ${color} to ${item.name}`);
       }
     }
   }
@@ -386,80 +467,86 @@ function renderItemSheetRarityColors(app, html, appData, options) {
   if (isEmptyObject(API.mapConfigurations)) {
     API.mapConfigurations = API.getColorMap();
   }
+  
+  // Handle both jQuery elements and native DOM elements
+  const htmlElement = html instanceof jQuery ? html[0] : html;
+  
   // Color item name
   let itemNameElement = null;
-  if (html.find(options.itemNameSelector)?.length > 0) {
-    itemNameElement = html.find(options.itemNameSelector);
-  }
-  if (html.find(options.itemNameSelector2)?.length > 0) {
-    itemNameElement = html.find(options.itemNameSelector2);
+  const nameEl = htmlElement.querySelector(options.itemNameSelector);
+  if (nameEl) {
+    itemNameElement = nameEl;
+  } else {
+    const nameEl2 = htmlElement.querySelector(options.itemNameSelector2);
+    if (nameEl2) {
+      itemNameElement = nameEl2;
+    }
   }
   // if (!itemNameElement) {
   //     return;
   // }
   let itemImageNameElement = null;
-  if (html.find(options.itemImageNameSelector)?.length > 0) {
-    itemImageNameElement = html.find(options.itemImageNameSelector);
+  const imgEl = htmlElement.querySelector(options.itemImageNameSelector);
+  if (imgEl) {
+    itemImageNameElement = imgEl;
   }
 
   const color = API.getColorFromItem(item);
   if (!colorIsDefault(color)) {
-    if (itemNameElement?.length > 0) {
+    if (itemNameElement) {
       if (rarityColorBackgroundEnable) {
         const backgroundColor = API.getRarityTextBackgroundColor(color);
-        itemNameElement.css("background-color", backgroundColor);
+        itemNameElement.style.backgroundColor = backgroundColor;
         if (game.modules.get("colorsettings")?.api) {
           const textColor = API.getRarityTextColor(color);
-          itemNameElement.css("color", textColor);
+          itemNameElement.style.color = textColor;
         }
       } else if (rarityColorTextEnable) {
-        itemNameElement.css("color", color);
+        itemNameElement.style.color = color;
       }
     }
     if (rarityColorBorderEnable) {
-      if (itemImageNameElement?.length > 0 && color) {
-        // itemImageNameElement.css("border-color", color+"!important");
-        itemImageNameElement.css("border", "solid " + color);
-        // itemImageNameElement.css("border-width", "thick");
+      if (itemImageNameElement && color) {
+        // itemImageNameElement.style.borderColor = color+"!important";
+        itemImageNameElement.style.border = "solid " + color;
+        // itemImageNameElement.style.borderWidth = "thick";
       }
     }
   }
 
   // Change rarity select element
-  const raritySelectElement = html.find(options.raritySelectSelector);
-  if (!raritySelectElement.length) {
+  const raritySelectElement = htmlElement.querySelector(options.raritySelectSelector);
+  if (!raritySelectElement) {
     return;
   }
   // const customRarities = game.settings.get(CONSTANTS.MODULE_ID, "rarityNames");
-  $(raritySelectElement)
-    .find(`option`)
-    .each(function () {
-      let rarityOrType = $(this).prop("value")?.replaceAll(/\s/g, "").toLowerCase().trim() ?? undefined;
-      if (!rarityOrType) {
-        return;
-      }
-      // if (rarityOrType === "common") {
-      //   return;
-      // }
-      if (!API.mapConfigurations[rarityOrType]) {
-        Logger.warn(`Cannot find color for rarity '${rarityOrType}'`, false, API.mapConfigurations);
-        return;
-      }
-      const color = API.mapConfigurations[rarityOrType].color;
+  raritySelectElement.querySelectorAll(`option`).forEach((optionEl) => {
+    let rarityOrType = optionEl.value?.replaceAll(/\s/g, "").toLowerCase().trim() ?? undefined;
+    if (!rarityOrType) {
+      return;
+    }
+    // if (rarityOrType === "common") {
+    //   return;
+    // }
+    if (!API.mapConfigurations[rarityOrType]) {
+      Logger.warn(`Cannot find color for rarity '${rarityOrType}'`, false, API.mapConfigurations);
+      return;
+    }
+    const color = API.mapConfigurations[rarityOrType].color;
 
-      $(this).css("color", color);
-      // Color selected option
-      if ($(this).prop("selected")) {
-        const backgroundColor = API.getRarityTextBackgroundColor(color);
-        $(this).css("background-color", backgroundColor);
-        if (game.modules.get("colorsettings")?.api) {
-          const textColor = API.getRarityTextColor(color);
-          $(this).css("color", textColor);
-        } else {
-          $(this).css("color", "white");
-        }
+    optionEl.style.color = color;
+    // Color selected option
+    if (optionEl.selected) {
+      const backgroundColor = API.getRarityTextBackgroundColor(color);
+      optionEl.style.backgroundColor = backgroundColor;
+      if (game.modules.get("colorsettings")?.api) {
+        const textColor = API.getRarityTextColor(color);
+        optionEl.style.color = textColor;
+      } else {
+        optionEl.style.color = "white";
       }
-    });
+    }
+  });
 }
 
 function _retrieveMapItemRarityDefaults() {
@@ -760,7 +847,7 @@ export function colorIsDefault(color) {
 
 function isDisabled() {
   return (
-    game.settings.get(CONSTANTS.MODULE_ID, "rarityFlag") ||
+    !game.settings.get(CONSTANTS.MODULE_ID, "rarityFlag") ||
     game.settings.get(CONSTANTS.MODULE_ID, "rarityColorMode") === CONSTANTS.SETTINGS.MODE.NONE
   );
 }
